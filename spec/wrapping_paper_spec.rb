@@ -1,14 +1,26 @@
 require_relative 'spec_helper'
 require 'wrapping_paper'
 
-describe "a class that includes WrappingPaper" do
-  class Presenter
-    include WrappingPaper
+describe "a WrappingPaper subclass" do
+  class Presenter < WrappingPaper
   end
+
+  class Toy
+    def really_shiny?
+      true
+    end
+
+    def all_the_args?(first, *rest, &others)
+      first && !rest.empty? && block_given?
+    end
+  end
+
+  let(:toy) { Toy.new }
+  let(:gift) { Presenter.new(toy) }
 
   describe "#wrapped" do
     it "returns the wrapped object" do
-      Presenter.new(:shiny_present).wrapped.should == :shiny_present
+      gift.wrapped.should == toy
     end
   end
 
@@ -17,13 +29,11 @@ describe "a class that includes WrappingPaper" do
     after { Presenter.send(:remove_method, :shiny_present) }
 
     it "defines an alias for #wrapped" do
-      presenter = Presenter.new :toy
-
-      presenter.shiny_present.should == presenter.wrapped
+      gift.shiny_present.should == gift.wrapped
     end
 
-    it "doesn't exist on WrappingPaper" do
-      ->() { WrappingPaper.wraps_a }.should raise_error(NoMethodError)
+    it "yells at you if called on WrappingPaper" do
+      ->() { WrappingPaper.wraps_a(:thing) }.should raise_error(/bad idea/)
     end
   end
 
@@ -36,8 +46,7 @@ describe "a class that includes WrappingPaper" do
       presenter.present.should == presenter.wrapped
     end
 
-    class PresenterWithReceipt
-      include WrappingPaper
+    class PresenterWithReceipt < WrappingPaper
     end
 
     context "with a nonempty extras hash" do
@@ -64,19 +73,6 @@ describe "a class that includes WrappingPaper" do
   end
 
   describe "#method_missing" do
-    class Toy
-      def really_shiny?
-        true
-      end
-
-      def all_the_args?(first, *rest, &others)
-        first && !rest.empty? && block_given?
-      end
-    end
-
-    let(:toy) { Toy.new }
-    let(:gift) { Presenter.new(toy) }
-
     context "if @wrapped responds to the method" do
       it "delegates the call to @wrapped" do
         toy.should_receive(:really_shiny?)

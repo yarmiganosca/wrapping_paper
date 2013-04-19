@@ -1,6 +1,6 @@
 require "wrapping_paper/version"
 
-module WrappingPaper
+class WrappingPaper
   attr_reader :wrapped
 
   def initialize(gift, extras = {})
@@ -22,13 +22,13 @@ module WrappingPaper
     end
   end
 
-  module Helper
-    def wraps_a(sym)
-      self.send(:alias_method, sym, :wrapped)
-    end
-  end
 
-  def self.included(other)
-    other.send(:extend, Helper)
+  def self.wraps_a(sym)
+    # WrappingPaper.wraps_a would pollute all WrappingPaper subclasses, so no dice.
+    if self == WrappingPaper
+      raise "That's a really bad idea; it would affect *every* WrappingPaper subclass."
+    end
+    
+    self.send(:alias_method, sym, :wrapped)
   end
 end
